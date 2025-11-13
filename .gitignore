@@ -1,0 +1,36 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test files
+test.php
+test-*.php
+
+# Config files with credentials
+config.local.php
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+*.old
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+
+# Node modules (if any)
+node_modules/
+
+# Composer vendor (if any)
+vendor/

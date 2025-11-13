@@ -1,0 +1,19 @@
+{
+    "id": "Nominet",
+    "type": "domain-registrar",
+    "name": "Nominet EPP",
+    "description": "Nominet EPP domain registrar adapter for .uk domains",
+    "version": "1.0.0",
+    "author": {
+        "name": "AXYN",
+        "email": "support@axyn.co.uk",
+        "url": "https://axyn.co.uk"
+    },
+    "license": "Apache-2.0",
+    "minimum_boxbilling_version": "4.22",
+    "minimum_fossbilling_version": "0.6.0",
+    "icon_url": "https://raw.githubusercontent.com/AXYNUK/Nominet-EPP/main/icon.png",
+    "download_url": "https://github.com/AXYNUK/Nominet-EPP/releases/latest/download/Nominet.zip",
+    "project_url": "https://github.com/AXYNUK/Nominet-EPP",
+    "support_url": "https://github.com/AXYNUK/Nominet-EPP/issues"
+}
