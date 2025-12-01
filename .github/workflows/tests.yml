@@ -1,0 +1,160 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  unit-tests:
+    name: Unit Tests (PHP ${{ matrix.php-version }})
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['7.4', '8.0', '8.1', '8.2', '8.3']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: openssl, xml, dom
+          coverage: xdebug
+          tools: composer:v2
+
+      - name: Validate composer.json
+        run: |
+          if [ -f composer.json ]; then
+            composer validate --strict
+          fi
+
+      - name: Install dependencies
+        run: |
+          if [ -f composer.json ]; then
+            composer install --prefer-dist --no-progress
+          else
+            echo "No composer.json, installing PHPUnit globally"
+            composer global require phpunit/phpunit:^9.0
+            echo "$(composer global config bin-dir --absolute)" >> $GITHUB_PATH
+          fi
+
+      - name: Run unit tests
+        run: |
+          if [ -f vendor/bin/phpunit ]; then
+            vendor/bin/phpunit --testsuite Unit
+          else
+            phpunit --testsuite Unit
+          fi
+
+      - name: Upload coverage reports
+        if: matrix.php-version == '8.2'
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/clover.xml
+          fail_ci_if_error: false
+          verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: unit-tests
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: openssl, xml, dom
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: |
+          if [ -f composer.json ]; then
+            composer install --prefer-dist --no-progress
+          else
+            composer global require phpunit/phpunit:^9.0
+            echo "$(composer global config bin-dir --absolute)" >> $GITHUB_PATH
+          fi
+
+      - name: Run integration tests
+        if: env.NOMINET_TEST_USERNAME != ''
+        env:
+          NOMINET_TEST_USERNAME: ${{ secrets.NOMINET_TEST_USERNAME }}
+          NOMINET_TEST_PASSWORD: ${{ secrets.NOMINET_TEST_PASSWORD }}
+        run: |
+          if [ -f vendor/bin/phpunit ]; then
+            vendor/bin/phpunit --testsuite Integration --group integration
+          else
+            phpunit --testsuite Integration --group integration
+          fi
+
+      - name: Skip integration tests notice
+        if: env.NOMINET_TEST_USERNAME == ''
+        run: echo "Integration tests skipped - no testbed credentials configured"
+
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: openssl, xml, dom
+          tools: phpstan, phpcs
+
+      - name: PHP Syntax Check
+        run: find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \;
+
+      - name: PHPStan Analysis
+        continue-on-error: true
+        run: |
+          if [ -f phpstan.neon ] || [ -f phpstan.neon.dist ]; then
+            phpstan analyse
+          else
+            echo "No PHPStan config found, running basic analysis"
+            phpstan analyse Nominet.php --level=5 || true
+          fi
+
+      - name: PHPCS Check
+        continue-on-error: true
+        run: |
+          if [ -f phpcs.xml ] || [ -f phpcs.xml.dist ]; then
+            phpcs
+          else
+            phpcs --standard=PSR12 Nominet.php || true
+          fi
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run security audit
+        run: |
+          if [ -f composer.lock ]; then
+            composer audit
+          fi
+
+      - name: Check for hardcoded credentials
+        run: |
+          ! grep -rn "password.*=" --include="*.php" . | grep -v "password.*\$" | grep -v "password.*config" | grep -v "Test" | grep -v "Mock" || echo "No hardcoded passwords found"

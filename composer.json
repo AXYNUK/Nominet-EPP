@@ -1,0 +1,71 @@
+{
+    "name": "axynuk/nominet-epp",
+    "description": "Nominet EPP Domain Registrar for FOSSBilling",
+    "type": "fossbilling-extension",
+    "license": "Apache-2.0",
+    "keywords": [
+        "fossbilling",
+        "domain",
+        "registrar",
+        "nominet",
+        "epp",
+        "uk-domains"
+    ],
+    "homepage": "https://github.com/AXYNUK/Nominet-EPP",
+    "authors": [
+        {
+            "name": "AXYN UK",
+            "email": "support@axyn.co.uk",
+            "homepage": "https://axyn.co.uk"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/AXYNUK/Nominet-EPP/issues",
+        "source": "https://github.com/AXYNUK/Nominet-EPP"
+    },
+    "require": {
+        "php": ">=7.4",
+        "ext-openssl": "*",
+        "ext-xml": "*",
+        "ext-dom": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0",
+        "phpstan/phpstan": "^1.0",
+        "squizlabs/php_codesniffer": "^3.7"
+    },
+    "autoload": {
+        "classmap": [
+            "Nominet.php"
+        ]
+    },
+    "autoload-dev": {
+        "classmap": [
+            "tests/Mocks/",
+            "tests/"
+        ]
+    },
+    "scripts": {
+        "test": "phpunit --testsuite Unit",
+        "test:integration": "phpunit --testsuite Integration --group integration",
+        "test:coverage": "phpunit --testsuite Unit --coverage-html coverage/",
+        "lint": "php -l Nominet.php",
+        "phpstan": "phpstan analyse Nominet.php --level=5",
+        "phpcs": "phpcs --standard=PSR12 Nominet.php",
+        "check": [
+            "@lint",
+            "@test"
+        ]
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "extra": {
+        "fossbilling": {
+            "type": "registrar",
+            "version": "1.0.0",
+            "min-fossbilling-version": "0.5.0"
+        }
+    }
+}
